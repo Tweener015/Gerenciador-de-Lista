@@ -1,4 +1,5 @@
-// Conecta com a "pasta" de clientes no seu banco de dados
+// Adicione isso na primeira linha do script.js se ainda não tiver
+const database = firebase.database(); 
 const clientesRef = database.ref('clientes');
 
 // FUNÇÃO PARA SALVAR OU EDITAR
