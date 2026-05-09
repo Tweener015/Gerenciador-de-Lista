@@ -1,9 +1,8 @@
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Gerenciador L.I Express</title>
     <link rel="stylesheet" href="style.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -66,6 +65,28 @@
             </table>
         </div>
     </div>
+
+    <!-- 1º: Bibliotecas do Firebase -->
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-database-compat.js"></script>
+
+    <!-- 2º: Configuração da Conexão (SUA API AQUI) -->
+    <script>
+      const firebaseConfig = {
+        apiKey: "AIzaSyBv47CbbM5M4C3LMdKfqwsu7p7888sOl3U",
+        authDomain: "gerenciador-de-lista-iptv.firebaseapp.com",
+        databaseURL: "https://gerenciador-de-lista-iptv-default-rtdb.firebaseio.com",
+        projectId: "gerenciador-de-lista-iptv",
+        storageBucket: "gerenciador-de-lista-iptv.appspot.com",
+        messagingSenderId: "732049182312",
+        appId: "1:732049182312:web:0b25754988600d83151270"
+      };
+
+      firebase.initializeApp(firebaseConfig);
+      const database = firebase.database();
+    </script>
+
+    <!-- 3º: Lógica do seu sistema -->
     <script src="script.js"></script>
 </body>
 </html>
