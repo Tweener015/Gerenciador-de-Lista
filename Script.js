@@ -1,11 +1,10 @@
-// Adicione isso na primeira linha do script.js se ainda não tiver
-const database = firebase.database(); 
+// 1. Conexão com o Banco de Dados
+const database = firebase.database();
 const clientesRef = database.ref('clientes');
 
-// FUNÇÃO PARA SALVAR OU EDITAR
+// 2. FUNÇÃO PARA SALVAR OU EDITAR
 document.getElementById('client-form').addEventListener('submit', function(e) {
     e.preventDefault();
-
     const id = document.getElementById('edit-id').value;
     const dados = {
         nome: document.getElementById('nome').value,
@@ -18,77 +17,99 @@ document.getElementById('client-form').addEventListener('submit', function(e) {
     };
 
     if (id) {
-        // Se já tem ID, ele atualiza o cliente que já existe
         database.ref('clientes/' + id).set(dados);
         document.getElementById('edit-id').value = '';
         document.getElementById('save-btn').innerText = 'Salvar Cliente';
         document.getElementById('cancel-btn').style.display = 'none';
     } else {
-        // Se não tem ID, ele cria um novo no banco de dados
         clientesRef.push(dados);
     }
-
-    this.reset(); // Limpa o formulário depois de salvar
+    this.reset();
 });
 
-// FUNÇÃO QUE ESCUTA O BANCO (Faz aparecer no PC e Celular na hora)
+// 3. FUNÇÃO QUE MOSTRA OS CLIENTES (IGUAL À IMAGEM)
 clientesRef.on('value', (snapshot) => {
+    renderizarTabela(snapshot);
+});
+
+function renderizarTabela(snapshot) {
     const lista = document.getElementById('client-list');
+    const busca = document.getElementById('search-input').value.toLowerCase();
     lista.innerHTML = '';
     
+    let clientes = [];
     snapshot.forEach((childSnapshot) => {
-        const c = childSnapshot.val();
-        const key = childSnapshot.key;
+        clientes.push({ key: childSnapshot.key, ...childSnapshot.val() });
+    });
 
+    // Filtro de busca
+    clientes = clientes.filter(c => c.nome.toLowerCase().includes(busca));
+
+    clientes.forEach((c) => {
         const tr = document.createElement('tr');
         tr.innerHTML = `
             <td><strong>${c.nome}</strong><br><small>${c.local || ''}</small></td>
-            <td>MAC: ${c.mac}<br>Key: ${c.key || '---'}<br>App: ${c.app}</td>
+            <td>MAC: ${c.mac}<br>Key: ${c.key || '---'}<br><span style="color:blue; font-weight:bold;">${c.app}</span></td>
             <td>${formatarData(c.vencApp)}</td>
             <td>${formatarData(c.vencLista)}</td>
             <td>
-                <button onclick="editar('${key}', '${c.nome}', '${c.mac}', '${c.key}', '${c.app}', '${c.local}', '${c.vencApp}', '${c.vencLista}')">✏️</button>
-                <button onclick="remover('${key}')" style="background:red; color:white; border:none; padding:5px; cursor:pointer; border-radius:3px;">🗑️</button>
+                <button class="edit-btn" onclick="editar('${c.key}', '${c.nome}', '${c.mac}', '${c.key}', '${c.app}', '${c.local}', '${c.vencApp}', '${c.vencLista}')">Editar</button>
+                <button class="remove-btn" onclick="remover('${c.key}')">Remover</button>
             </td>
         `;
         lista.appendChild(tr);
     });
+}
+
+// 4. FUNÇÃO EXPORTAR PARA EXCEL (Funcionando agora!)
+function exportToExcel() {
+    clientesRef.once('value', (snapshot) => {
+        const data = [];
+        snapshot.forEach((child) => {
+            const c = child.val();
+            data.push({
+                "Cliente": c.nome,
+                "MAC": c.mac,
+                "Key": c.key,
+                "App": c.app,
+                "Venc. App": c.vencApp,
+                "Venc. Lista": c.vencLista
+            });
+        });
+        const worksheet = XLSX.utils.json_to_sheet(data);
+        const workbook = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(workbook, worksheet, "Clientes");
+        XLSX.writeFile(workbook, "Clientes_LI_Express.xlsx");
+    });
+}
+
+// Funções de apoio
+document.getElementById('search-input').addEventListener('input', () => {
+    clientesRef.once('value', renderizarTabela);
 });
 
-// Formata a data de YYYY-MM-DD para DD/MM/YYYY
 function formatarData(data) {
     if(!data) return '---';
     const partes = data.split('-');
     return `${partes[2]}/${partes[1]}/${partes[0]}`;
 }
 
-// Remove o cliente do banco de dados
 function remover(id) {
     if(confirm("Deseja mesmo remover este cliente?")) {
         database.ref('clientes/' + id).remove();
     }
 }
 
-// Preenche o formulário para editar
-function editar(id, nome, mac, key, app, local, vencApp, vencLista) {
+function editar(id, nome, mac, deviceKey, app, local, vencApp, vencLista) {
     document.getElementById('edit-id').value = id;
     document.getElementById('nome').value = nome;
     document.getElementById('mac').value = mac;
-    document.getElementById('key').value = key;
+    document.getElementById('key').value = deviceKey;
     document.getElementById('app').value = app;
     document.getElementById('local').value = local;
     document.getElementById('vencApp').value = vencApp;
     document.getElementById('vencLista').value = vencLista;
-
     document.getElementById('save-btn').innerText = 'Atualizar Cliente';
-    document.getElementById('cancel-btn').style.display = 'block';
+    document.getElementById('cancel-btn').style.display = 'inline-block';
     window.scrollTo(0,0);
 }
-
-// Botão cancelar edição
-document.getElementById('cancel-btn').addEventListener('click', function() {
-    document.getElementById('client-form').reset();
-    document.getElementById('edit-id').value = '';
-    this.style.display = 'none';
-    document.getElementById('save-btn').innerText = 'Salvar Cliente';
-});
