@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gerenciador L.I Express</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+</head>
+<body>
+    <div class="container">
+        <h1>Gerenciamento de Clientes</h1>
+        
+        <form id="client-form">
+            <input type="hidden" id="edit-id">
+            <div class="form-grid">
+                <input type="text" id="nome" placeholder="Nome do Cliente" required>
+                <input type="text" id="mac" placeholder="MAC Address" required>
+                <input type="text" id="key" placeholder="Device Key">
+                <input type="text" id="app" placeholder="Nome do App" required>
+                <input type="text" id="local" placeholder="Local (Ex: TV, Celular)">
+                
+                <div class="date-input-group">
+                    <label>Venc. APP:</label>
+                    <input type="date" id="vencApp" required>
+                </div>
+                
+                <div class="date-input-group">
+                    <label>Venc. Lista:</label>
+                    <input type="date" id="vencLista" required>
+                </div>
+
+                <button type="submit" id="save-btn">Salvar Cliente</button>
+                <button type="button" id="cancel-btn" style="display:none; background:#6c757d; color:white;">Cancelar Edição</button>
+            </div>
+        </form>
+
+        <hr>
+
+        <div class="controls-row">
+            <input type="text" id="search-input" placeholder="🔍 Pesquisar por nome...">
+            
+            <select id="sort-select">
+                <option value="nome-asc">Ordem: A-Z</option>
+                <option value="nome-desc">Ordem: Z-A</option>
+                <option value="venc-app">Vencimento APP</option>
+                <option value="venc-lista">Vencimento Lista</option>
+            </select>
+            
+            <button onclick="exportToExcel()" class="excel-btn">📥 Exportar Excel</button>
+        </div>
+
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Cliente</th>
+                        <th>Acesso (MAC/Key/App)</th>
+                        <th>Venc. APP</th>
+                        <th>Venc. Lista</th>
+                        <th>Ações</th>
+                    </tr>
+                </thead>
+                <tbody id="client-list"></tbody>
+            </table>
+        </div>
+    </div>
+    <script src="script.js"></script>
+</body>
+</html>
