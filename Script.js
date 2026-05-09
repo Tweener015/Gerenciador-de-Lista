@@ -1,6 +1,7 @@
+// Conecta com a "pasta" de clientes no seu banco de dados
 const clientesRef = database.ref('clientes');
 
-// SALVAR OU EDITAR
+// FUNÇÃO PARA SALVAR OU EDITAR
 document.getElementById('client-form').addEventListener('submit', function(e) {
     e.preventDefault();
 
@@ -16,20 +17,20 @@ document.getElementById('client-form').addEventListener('submit', function(e) {
     };
 
     if (id) {
-        // Atualiza cliente existente
+        // Se já tem ID, ele atualiza o cliente que já existe
         database.ref('clientes/' + id).set(dados);
         document.getElementById('edit-id').value = '';
         document.getElementById('save-btn').innerText = 'Salvar Cliente';
         document.getElementById('cancel-btn').style.display = 'none';
     } else {
-        // Cria novo cliente
+        // Se não tem ID, ele cria um novo no banco de dados
         clientesRef.push(dados);
     }
 
-    this.reset();
+    this.reset(); // Limpa o formulário depois de salvar
 });
 
-// ESCUTAR MUDANÇAS (Faz aparecer no Celular e PC ao mesmo tempo)
+// FUNÇÃO QUE ESCUTA O BANCO (Faz aparecer no PC e Celular na hora)
 clientesRef.on('value', (snapshot) => {
     const lista = document.getElementById('client-list');
     lista.innerHTML = '';
@@ -46,25 +47,28 @@ clientesRef.on('value', (snapshot) => {
             <td>${formatarData(c.vencLista)}</td>
             <td>
                 <button onclick="editar('${key}', '${c.nome}', '${c.mac}', '${c.key}', '${c.app}', '${c.local}', '${c.vencApp}', '${c.vencLista}')">✏️</button>
-                <button onclick="remover('${key}')" style="background:red; color:white;">🗑️</button>
+                <button onclick="remover('${key}')" style="background:red; color:white; border:none; padding:5px; cursor:pointer; border-radius:3px;">🗑️</button>
             </td>
         `;
         lista.appendChild(tr);
     });
 });
 
+// Formata a data de YYYY-MM-DD para DD/MM/YYYY
 function formatarData(data) {
     if(!data) return '---';
     const partes = data.split('-');
     return `${partes[2]}/${partes[1]}/${partes[0]}`;
 }
 
+// Remove o cliente do banco de dados
 function remover(id) {
-    if(confirm("Remover cliente?")) {
+    if(confirm("Deseja mesmo remover este cliente?")) {
         database.ref('clientes/' + id).remove();
     }
 }
 
+// Preenche o formulário para editar
 function editar(id, nome, mac, key, app, local, vencApp, vencLista) {
     document.getElementById('edit-id').value = id;
     document.getElementById('nome').value = nome;
@@ -80,6 +84,7 @@ function editar(id, nome, mac, key, app, local, vencApp, vencLista) {
     window.scrollTo(0,0);
 }
 
+// Botão cancelar edição
 document.getElementById('cancel-btn').addEventListener('click', function() {
     document.getElementById('client-form').reset();
     document.getElementById('edit-id').value = '';
