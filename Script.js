@@ -1,8 +1,8 @@
-// 1. Conexão com o Banco de Dados
+// 1. Conexão
 const database = firebase.database();
 const clientesRef = database.ref('clientes');
 
-// 2. FUNÇÃO PARA SALVAR OU EDITAR
+// 2. Salvar Cliente
 document.getElementById('client-form').addEventListener('submit', function(e) {
     e.preventDefault();
     const id = document.getElementById('edit-id').value;
@@ -27,41 +27,37 @@ document.getElementById('client-form').addEventListener('submit', function(e) {
     this.reset();
 });
 
-// 3. FUNÇÃO QUE MOSTRA OS CLIENTES (IGUAL À IMAGEM)
+// 3. Mostrar na Tabela (Igual à imagem que você mandou)
 clientesRef.on('value', (snapshot) => {
-    renderizarTabela(snapshot);
-});
-
-function renderizarTabela(snapshot) {
     const lista = document.getElementById('client-list');
     const busca = document.getElementById('search-input').value.toLowerCase();
     lista.innerHTML = '';
     
     let clientes = [];
-    snapshot.forEach((childSnapshot) => {
-        clientes.push({ key: childSnapshot.key, ...childSnapshot.val() });
+    snapshot.forEach((child) => {
+        clientes.push({ key: child.key, ...child.val() });
     });
 
-    // Filtro de busca
+    // Filtro de busca por nome
     clientes = clientes.filter(c => c.nome.toLowerCase().includes(busca));
 
     clientes.forEach((c) => {
         const tr = document.createElement('tr');
         tr.innerHTML = `
             <td><strong>${c.nome}</strong><br><small>${c.local || ''}</small></td>
-            <td>MAC: ${c.mac}<br>Key: ${c.key || '---'}<br><span style="color:blue; font-weight:bold;">${c.app}</span></td>
+            <td>MAC: ${c.mac}<br>Key: ${c.key || '---'}<br><span style="color:#007bff; font-weight:bold;">${c.app}</span></td>
             <td>${formatarData(c.vencApp)}</td>
             <td>${formatarData(c.vencLista)}</td>
             <td>
-                <button class="edit-btn" onclick="editar('${c.key}', '${c.nome}', '${c.mac}', '${c.key}', '${c.app}', '${c.local}', '${c.vencApp}', '${c.vencLista}')">Editar</button>
-                <button class="remove-btn" onclick="remover('${c.key}')">Remover</button>
+                <button class="edit-btn" style="background:#ffc107; border:none; padding:5px 10px; cursor:pointer; border-radius:3px; margin-bottom:5px; width:80px;" onclick="editar('${c.key}', '${c.nome}', '${c.mac}', '${c.key}', '${c.app}', '${c.local}', '${c.vencApp}', '${c.vencLista}')">Editar</button><br>
+                <button class="remove-btn" style="background:#dc3545; color:white; border:none; padding:5px 10px; cursor:pointer; border-radius:3px; width:80px;" onclick="remover('${c.key}')">Remover</button>
             </td>
         `;
         lista.appendChild(tr);
     });
-}
+});
 
-// 4. FUNÇÃO EXPORTAR PARA EXCEL (Funcionando agora!)
+// 4. Exportar Excel
 function exportToExcel() {
     clientesRef.once('value', (snapshot) => {
         const data = [];
@@ -79,13 +75,13 @@ function exportToExcel() {
         const worksheet = XLSX.utils.json_to_sheet(data);
         const workbook = XLSX.utils.book_new();
         XLSX.utils.book_append_sheet(workbook, worksheet, "Clientes");
-        XLSX.writeFile(workbook, "Clientes_LI_Express.xlsx");
+        XLSX.writeFile(workbook, "Gerenciamento_Clientes.xlsx");
     });
 }
 
-// Funções de apoio
+// Auxiliares
 document.getElementById('search-input').addEventListener('input', () => {
-    clientesRef.once('value', renderizarTabela);
+    clientesRef.once('value', snapshot => { /* A tabela atualiza sozinha pelo .on('value') */ });
 });
 
 function formatarData(data) {
@@ -95,16 +91,14 @@ function formatarData(data) {
 }
 
 function remover(id) {
-    if(confirm("Deseja mesmo remover este cliente?")) {
-        database.ref('clientes/' + id).remove();
-    }
+    if(confirm("Deseja remover?")) database.ref('clientes/' + id).remove();
 }
 
-function editar(id, nome, mac, deviceKey, app, local, vencApp, vencLista) {
+function editar(id, nome, mac, key, app, local, vencApp, vencLista) {
     document.getElementById('edit-id').value = id;
     document.getElementById('nome').value = nome;
     document.getElementById('mac').value = mac;
-    document.getElementById('key').value = deviceKey;
+    document.getElementById('key').value = key;
     document.getElementById('app').value = app;
     document.getElementById('local').value = local;
     document.getElementById('vencApp').value = vencApp;
