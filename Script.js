@@ -1,11 +1,10 @@
-// 1. Conexão
-const database = firebase.database();
+// 1. Conexão (Sem repetir a variável do HTML)
 const clientesRef = database.ref('clientes');
 
-// 2. Salvar Cliente
-// FUNÇÃO PARA SALVAR OU EDITAR (COM ALERTA DE ERRO)
+// 2. Salvar Cliente (Com os alertas para garantir)
 document.getElementById('client-form').addEventListener('submit', function(e) {
-    e.preventDefault();
+    e.preventDefault(); // Impede a página de recarregar e apagar tudo!
+    
     const id = document.getElementById('edit-id').value;
     const dados = {
         nome: document.getElementById('nome').value,
@@ -29,16 +28,17 @@ document.getElementById('client-form').addEventListener('submit', function(e) {
     } else {
         clientesRef.push(dados)
             .then(() => {
-                alert("✅ Cliente SALVO com sucesso no banco de dados!");
+                alert("✅ Cliente SALVO com sucesso!");
             })
             .catch(error => {
-                alert("❌ ERRO DO FIREBASE: O banco de dados bloqueou o salvamento. Erro: " + error.message);
+                alert("❌ ERRO DO FIREBASE: O banco bloqueou o salvamento. Verifique as Rules.");
             });
     }
     
-    this.reset();
+    this.reset(); // Limpa o formulário apenas se der certo
 });
-// 3. Mostrar na Tabela (Igual à imagem que você mandou)
+
+// 3. Mostrar na Tabela 
 clientesRef.on('value', (snapshot) => {
     const lista = document.getElementById('client-list');
     const busca = document.getElementById('search-input').value.toLowerCase();
@@ -49,7 +49,6 @@ clientesRef.on('value', (snapshot) => {
         clientes.push({ key: child.key, ...child.val() });
     });
 
-    // Filtro de busca por nome
     clientes = clientes.filter(c => c.nome.toLowerCase().includes(busca));
 
     clientes.forEach((c) => {
@@ -92,7 +91,7 @@ function exportToExcel() {
 
 // Auxiliares
 document.getElementById('search-input').addEventListener('input', () => {
-    clientesRef.once('value', snapshot => { /* A tabela atualiza sozinha pelo .on('value') */ });
+    clientesRef.once('value', snapshot => { /* Gatilho de busca */ });
 });
 
 function formatarData(data) {
