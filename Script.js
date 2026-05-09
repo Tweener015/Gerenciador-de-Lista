@@ -3,6 +3,7 @@ const database = firebase.database();
 const clientesRef = database.ref('clientes');
 
 // 2. Salvar Cliente
+// FUNÇÃO PARA SALVAR OU EDITAR (COM ALERTA DE ERRO)
 document.getElementById('client-form').addEventListener('submit', function(e) {
     e.preventDefault();
     const id = document.getElementById('edit-id').value;
@@ -17,16 +18,26 @@ document.getElementById('client-form').addEventListener('submit', function(e) {
     };
 
     if (id) {
-        database.ref('clientes/' + id).set(dados);
-        document.getElementById('edit-id').value = '';
-        document.getElementById('save-btn').innerText = 'Salvar Cliente';
-        document.getElementById('cancel-btn').style.display = 'none';
+        database.ref('clientes/' + id).set(dados)
+            .then(() => {
+                alert("✅ Cliente ATUALIZADO com sucesso!");
+                document.getElementById('edit-id').value = '';
+                document.getElementById('save-btn').innerText = 'Salvar Cliente';
+                document.getElementById('cancel-btn').style.display = 'none';
+            })
+            .catch(error => alert("❌ ERRO AO ATUALIZAR: " + error.message));
     } else {
-        clientesRef.push(dados);
+        clientesRef.push(dados)
+            .then(() => {
+                alert("✅ Cliente SALVO com sucesso no banco de dados!");
+            })
+            .catch(error => {
+                alert("❌ ERRO DO FIREBASE: O banco de dados bloqueou o salvamento. Erro: " + error.message);
+            });
     }
+    
     this.reset();
 });
-
 // 3. Mostrar na Tabela (Igual à imagem que você mandou)
 clientesRef.on('value', (snapshot) => {
     const lista = document.getElementById('client-list');
