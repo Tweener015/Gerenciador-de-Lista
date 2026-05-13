@@ -1,18 +1,24 @@
 // ==========================================
 // 1. CONFIGURAÇÃO DO FIREBASE
 // ==========================================
+// ATENÇÃO: Substitua os valores abaixo pelas chaves do seu Console Firebase
 const firebaseConfig = {
-    apiKey: "COLE_AQUI_SUA_API_KEY",
-    authDomain: "COLE_AQUI_SEU_AUTH_DOMAIN",
-    databaseURL: "COLE_AQUI_SEU_DATABASE_URL",
-    projectId: "COLE_AQUI_SEU_PROJECT_ID",
-    storageBucket: "COLE_AQUI_SEU_STORAGE_BUCKET",
-    messagingSenderId: "COLE_AQUI_SEU_MESSAGING_SENDER_ID",
-    appId: "COLE_AQUI_SEU_APP_ID"
+  apiKey: "AIzaSyC5Fjs0bTcB26oOK9hXkI_ZTFoYWk2VXR4",
+  authDomain: "gerenciador-de-lista-iptv.firebaseapp.com",
+  databaseURL: "https://gerenciador-de-lista-iptv-default-rtdb.firebaseio.com",
+  projectId: "gerenciador-de-lista-iptv",
+  storageBucket: "gerenciador-de-lista-iptv.firebasestorage.app",
+  messagingSenderId: "783187122324",
+  appId: "1:783187122324:web:da5245a33f646a164b7c81",
+  measurementId: "G-FTFM90Y2LQ"
 };
 
 // Inicializa o Firebase
-firebase.initializeApp(firebaseConfig);
+if (!firebase.apps.length) {
+    firebase.initializeApp(firebaseConfig);
+    console.log("✅ Firebase Inicializado com sucesso!");
+}
+
 const dbRef = firebase.database().ref('clientes_iptv');
 
 // ==========================================
@@ -24,16 +30,25 @@ const editIdField = document.getElementById('edit-id');
 const saveBtn = document.getElementById('save-btn');
 const cancelBtn = document.getElementById('cancel-btn');
 
-let todosOsClientes = []; // Variável para guardar os dados e filtrar na tela
+let todosOsClientes = [];
 
 document.addEventListener('DOMContentLoaded', () => {
+    console.log("📡 Conectando ao Banco de Dados...");
+
     // Escuta o banco de dados em tempo real
     dbRef.on('value', (snapshot) => {
+        console.log("🔄 Dados recebidos do Firebase!");
         todosOsClientes = [];
+        
         snapshot.forEach((child) => {
             todosOsClientes.push({ id: child.key, ...child.val() });
         });
-        renderTable(); // Atualiza a tabela sempre que o banco mudar
+        
+        console.log(`📊 Total de clientes carregados: ${todosOsClientes.length}`);
+        renderTable(); 
+    }, (error) => {
+        console.error("❌ Erro de Permissão ou Conexão:", error.message);
+        alert("Erro ao carregar dados. Verifique as Regras de Segurança no Console do Firebase.");
     });
 
     document.getElementById('search-input').addEventListener('input', renderTable);
@@ -53,21 +68,36 @@ clientForm.addEventListener('submit', function(e) {
         app: document.getElementById('app').value,
         local: document.getElementById('local').value,
         vencApp: document.getElementById('vencApp').value,
-        vencLista: document.getElementById('vencLista').value
+        vencLista: document.getElementById('vencLista').value,
+        ultimaAtualizacao: new Date().toISOString()
     };
 
     const editId = editIdField.value;
 
     if (editId) {
         // Atualizar existente
+        console.log(`⏳ Atualizando cliente ID: ${editId}...`);
         dbRef.child(editId).set(clientData)
-            .then(() => resetForm())
-            .catch(error => alert("Erro ao atualizar: " + error.message));
+            .then(() => {
+                console.log("✅ Atualização concluída!");
+                resetForm();
+            })
+            .catch(error => {
+                console.error("❌ Erro ao atualizar:", error);
+                alert("Erro ao atualizar: " + error.message);
+            });
     } else {
         // Novo cadastro
+        console.log("⏳ Criando novo cadastro...");
         dbRef.push(clientData)
-            .then(() => resetForm())
-            .catch(error => alert("Erro ao salvar: " + error.message));
+            .then(() => {
+                console.log("✅ Cliente salvo com sucesso!");
+                resetForm();
+            })
+            .catch(error => {
+                console.error("❌ Erro ao salvar:", error);
+                alert("Erro ao salvar: " + error.message);
+            });
     }
 });
 
@@ -79,8 +109,11 @@ function renderTable() {
     const searchTerm = document.getElementById('search-input').value.toLowerCase();
     const sortType = document.getElementById('sort-select').value;
 
-    // Filtragem por nome
-    clients = clients.filter(c => c.nome.toLowerCase().includes(searchTerm));
+    // Filtragem
+    clients = clients.filter(c => 
+        c.nome.toLowerCase().includes(searchTerm) || 
+        c.mac.toLowerCase().includes(searchTerm)
+    );
 
     // Ordenação
     clients.sort((a, b) => {
@@ -109,11 +142,15 @@ function renderTable() {
                 <small>Key:</small> ${client.key || '---'}<br>
                 <span class="app-label">${client.app}</span>
             </td>
-            <td class="${vApp < hoje ? 'vencido' : ''}">${formatDate(client.vencApp)}</td>
-            <td class="${vLista < hoje ? 'vencido' : ''}">${formatDate(client.vencLista)}</td>
+            <td class="${vApp < hoje ? 'vencido' : ''}" style="color: ${vApp < hoje ? 'red' : 'inherit'}">
+                ${formatDate(client.vencApp)}
+            </td>
+            <td class="${vLista < hoje ? 'vencido' : ''}" style="color: ${vLista < hoje ? 'red' : 'inherit'}">
+                ${formatDate(client.vencLista)}
+            </td>
             <td>
                 <button class="edit-btn" onclick="editClient('${client.id}')">Editar</button>
-                <button class="del-btn" onclick="deleteClient('${client.id}')">Remover</button>
+                <button class="del-btn" onclick="deleteClient('${client.id}')" style="background:#dc3545; color:white;">Remover</button>
             </td>
         `;
         clientList.appendChild(row);
@@ -121,7 +158,7 @@ function renderTable() {
 }
 
 // ==========================================
-// 5. FUNÇÕES AUXILIARES E BOTÕES
+// 5. FUNÇÕES AUXILIARES
 // ==========================================
 function formatDate(dateStr) {
     if(!dateStr) return "---";
@@ -159,7 +196,10 @@ cancelBtn.onclick = resetForm;
 
 function deleteClient(id) {
     if(confirm("Tem certeza que deseja remover este cliente?")) {
-        dbRef.child(id).remove();
+        console.log(`🗑️ Removendo cliente ID: ${id}...`);
+        dbRef.child(id).remove()
+            .then(() => console.log("✅ Cliente removido."))
+            .catch(error => console.error("❌ Erro ao remover:", error));
     }
 }
 
