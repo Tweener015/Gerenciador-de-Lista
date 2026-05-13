@@ -1,16 +1,15 @@
 // ==========================================
 // 1. CONFIGURAÇÃO DO FIREBASE
 // ==========================================
-// ATENÇÃO: Substitua os valores abaixo pelas chaves do seu Console Firebase
 const firebaseConfig = {
-  apiKey: "AIzaSyC5Fjs0bTcB26oOK9hXkI_ZTFoYWk2VXR4",
-  authDomain: "gerenciador-de-lista-iptv.firebaseapp.com",
-  databaseURL: "https://gerenciador-de-lista-iptv-default-rtdb.firebaseio.com",
-  projectId: "gerenciador-de-lista-iptv",
-  storageBucket: "gerenciador-de-lista-iptv.firebasestorage.app",
-  messagingSenderId: "783187122324",
-  appId: "1:783187122324:web:da5245a33f646a164b7c81",
-  measurementId: "G-FTFM90Y2LQ"
+    apiKey: "AIzaSyC5Fjs0bTcB26oOK9hXkI_ZTFoYWk2VXR4",
+    authDomain: "gerenciador-de-lista-iptv.firebaseapp.com",
+    databaseURL: "https://gerenciador-de-lista-iptv-default-rtdb.firebaseio.com",
+    projectId: "gerenciador-de-lista-iptv",
+    storageBucket: "gerenciador-de-lista-iptv.firebasestorage.app",
+    messagingSenderId: "783187122324",
+    appId: "1:783187122324:web:da5245a33f646a164b7c81",
+    measurementId: "G-FTFM90Y2LQ"
 };
 
 // Inicializa o Firebase
@@ -22,7 +21,7 @@ if (!firebase.apps.length) {
 const dbRef = firebase.database().ref('clientes_iptv');
 
 // ==========================================
-// 2. VARIÁVEIS E INICIALIZAÇÃO
+// 2. VARIÁVEIS DO SISTEMA E DA TELA
 // ==========================================
 const clientForm = document.getElementById('client-form');
 const clientList = document.getElementById('client-list');
@@ -32,10 +31,56 @@ const cancelBtn = document.getElementById('cancel-btn');
 
 let todosOsClientes = [];
 
-document.addEventListener('DOMContentLoaded', () => {
+// ==========================================
+// 3. SISTEMA DE LOGIN E SEGURANÇA (NOVO)
+// ==========================================
+
+// Monitora se o usuário está logado ou não
+firebase.auth().onAuthStateChanged((user) => {
+    const loginDiv = document.getElementById('login-container');
+    const mainDiv = document.getElementById('main-content');
+
+    if (user) {
+        // Se estiver logado: esconde login, mostra sistema e carrega dados
+        loginDiv.style.display = 'none';
+        mainDiv.style.display = 'block';
+        console.log("✅ Usuário autenticado!");
+        carregarDadosFirebase(); 
+    } else {
+        // Se NÃO estiver logado: mostra login, esconde sistema e limpa memória
+        loginDiv.style.display = 'block';
+        mainDiv.style.display = 'none';
+        todosOsClientes = [];
+        clientList.innerHTML = '';
+        console.log("🔒 Acesso bloqueado. Aguardando login.");
+    }
+});
+
+// Função acionada pelo botão "Entrar" no HTML
+window.fazerLogin = function() {
+    const email = document.getElementById('login-email').value;
+    const senha = document.getElementById('login-senha').value;
+
+    if(!email || !senha) return alert("Preencha e-mail e senha!");
+
+    firebase.auth().signInWithEmailAndPassword(email, senha)
+        .then(() => console.log("Login realizado com sucesso!"))
+        .catch((error) => alert("Erro ao acessar: Verifique seu e-mail e senha."));
+};
+
+// Função acionada pelo botão "Sair" no HTML
+window.fazerLogout = function() {
+    firebase.auth().signOut().then(() => {
+        console.log("Sessão encerrada.");
+    });
+};
+
+// ==========================================
+// 4. CARREGAR DADOS (SÓ RODA SE ESTIVER LOGADO)
+// ==========================================
+function carregarDadosFirebase() {
     console.log("📡 Conectando ao Banco de Dados...");
 
-    // Escuta o banco de dados em tempo real
     dbRef.on('value', (snapshot) => {
         console.log("🔄 Dados recebidos do Firebase!");
         todosOsClientes = [];
@@ -48,15 +93,18 @@ document.addEventListener('DOMContentLoaded', () => {
         renderTable(); 
     }, (error) => {
         console.error("❌ Erro de Permissão ou Conexão:", error.message);
-        alert("Erro ao carregar dados. Verifique as Regras de Segurança no Console do Firebase.");
+        alert("Sua sessão pode ter expirado ou você não tem permissão.");
     });
+}
 
+// Configura os ouvintes de filtro e busca na inicialização
+document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('search-input').addEventListener('input', renderTable);
     document.getElementById('sort-select').addEventListener('change', renderTable);
 });
 
 // ==========================================
-// 3. SALVAR OU ATUALIZAR
+// 5. SALVAR OU ATUALIZAR
 // ==========================================
 clientForm.addEventListener('submit', function(e) {
     e.preventDefault();
@@ -102,7 +150,7 @@ clientForm.addEventListener('submit', function(e) {
 });
 
 // ==========================================
-// 4. MOSTRAR DADOS NA TABELA (COM FILTROS)
+// 6. MOSTRAR DADOS NA TABELA (COM FILTROS)
 // ==========================================
 function renderTable() {
     let clients = [...todosOsClientes];
@@ -158,14 +206,15 @@ function renderTable() {
 }
 
 // ==========================================
-// 5. FUNÇÕES AUXILIARES
+// 7. FUNÇÕES AUXILIARES
 // ==========================================
 function formatDate(dateStr) {
     if(!dateStr) return "---";
     return dateStr.split('-').reverse().join('/');
 }
 
-function editClient(id) {
+// Alterado para window. para garantir que o HTML encontre a função dentro do escopo
+window.editClient = function(id) {
     const client = todosOsClientes.find(c => c.id === id);
     if(!client) return;
 
@@ -184,7 +233,7 @@ function editClient(id) {
     window.scrollTo({top: 0, behavior: 'smooth'});
 }
 
-function resetForm() {
+window.resetForm = function() {
     clientForm.reset();
     editIdField.value = '';
     saveBtn.innerText = "Salvar Cliente";
@@ -192,9 +241,9 @@ function resetForm() {
     cancelBtn.style.display = "none";
 }
 
-cancelBtn.onclick = resetForm;
+cancelBtn.onclick = window.resetForm;
 
-function deleteClient(id) {
+window.deleteClient = function(id) {
     if(confirm("Tem certeza que deseja remover este cliente?")) {
         console.log(`🗑️ Removendo cliente ID: ${id}...`);
         dbRef.child(id).remove()
@@ -203,7 +252,7 @@ function deleteClient(id) {
     }
 }
 
-function exportToExcel() {
+window.exportToExcel = function() {
     if(todosOsClientes.length === 0) return alert("Lista vazia!");
 
     const dataFormatted = todosOsClientes.map(c => ({
